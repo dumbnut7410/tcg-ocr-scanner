@@ -4,12 +4,13 @@ Trading Card Game card scanner using OCR (using Tesseract and OpenCV)
 
 Currently only supports a sub set of Magic: The Gathering™ cards, but the design is generic enough to support any Trading Card Game that uses the card name as the main identifier of the card.
 
-Inspired by [card_scan](https://github.com/YenTheFirst/card_scan), but using an OCR detection and doesn't try to find out where the card is. Instead, it shows a rectangle in the UI so the user can align the card. 
+Picked up from https://github.com/starstuffharvestingstarlight/tcg-ocr-scanner and updated
 
-My setup cost a total of AUD $10 and consists of:
-- Kmart webcam (ID 05e3:0510 Genesys Logic, Inc)
-- Lamp
-- Webcam stand (old jar, wire)
+Current hardware setup
+  - Samgsung Galaxy s4 running droidCam
+  - Coffee box to hold phone up
+
+I hope to get develop a hardware solution that will automatically flip through a pile of cards and scan them into the csv
 
 ## Description
 
@@ -58,6 +59,7 @@ The current setup was optimised for 800x600 webcams, but the detection doesn't s
 - numpy `sudo pip install numpy`
 - [hunspell](https://github.com/smathot/pyhunspell) `git clone git@github.com:smathot/pyhunspell.git && cd pyhunspell/ && sudo ./setup.py install`
 - [xerox](https://github.com/kennethreitz/xerox) `sudo pip install xerox`
+- pygame `sudo apt-get install python-pygame`
 
 ### Required software
 
@@ -69,30 +71,34 @@ On debian for example: `sudo apt-get install make xclip tesseract`
 
 ### Required data
 
-`cards.xml` with the cards you'd like to recognise. Current format included below.
+`cards.xml` with the cards you'd like to recognise. Current format included below (currently what the Cockatrice Oracle Downloader generates).
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <whatevertagyoudlike>
-  <cards>
-    <card>
-      <name>CARD_NAME</name>
-      <set picURL="http://someURL?multiverseid=VENDOR_ID&amp;someParam=X">SET_NAME</set>
-    </card>
-    ...
-  </cards>
+  <card>
+    <name>Soilshaper</name>
+    <set muId="79177">CHK</set>
+    <color>G</color>
+    <manacost>1G</manacost>
+    <cmc>2</cmc>
+    <type>Creature — Spirit</type>
+    <pt>1/1</pt>
+    <tablerow>2</tablerow>
+    <text>Whenever you cast a Spirit or Arcane spell, target land becomes a 3/3 creature until end of turn. It's still a land.</text>
+  </card>
 </whatevertagyoudlike>
 
 ```
 
 ### Required Hardware
 
-- Webcam with reasonable resolution and lighting (tested 800x600)
+- Webcam with reasonable resolution and lighting (tested 1280x720)
 - Optional rig to place the card in the best place for matching and prevent it from moving around
 
 ## Installing 
 
-- Get a copy of `cards.xml` and put it in `./dict/`
+- Get a copy of `cards.xml` and put it in `./db/`
 - Run `make` to generate the database and the dictionary
 
 ## Running
@@ -134,7 +140,7 @@ Using a `cards.xml` file with Magic: The Gathering™ card names
 $ ./main.py -v 1
 ```
 
-#### Output
+#### Output #TODO update
 
 ```
 Detected: Rapid Hybridization (12.84 secs)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import re
@@ -21,6 +23,7 @@ class CardDb(object):
 	source_whitelist = './db/expansion.whitelist'
 	target_dict_prefix = './db/tcg'
 	card_db = {}
+	expansions = []
 
 	def __init__(self, options, logger=None):
 		if not os.path.exists(self.db_path) and options.rebuild_db:
@@ -29,15 +32,15 @@ class CardDb(object):
 			self.build()
 		
 		if options.expansions:
-			expansions = options.expansions
+			self.expansions = options.expansions
 		elif os.path.exists(self.source_whitelist):
 			with open(self.source_whitelist, 'rt') as whitelist:
-				expansions = whitelist.read().strip().split('\n')
+				self.expansions = whitelist.read().strip().split('\n')
 		else:
-			expansions = []
+			self.expansions = []
 		if logger:
 			logger.log('Limiting DB to %s' % expansions)
-		self.update_db(expansions, options.rebuild_db, True)
+		self.update_db(self.expansions, options.rebuild_db, True)
 
 	def build(self):
 		with sqlite3.connect(self.db_path) as connection:
@@ -52,13 +55,22 @@ class CardDb(object):
 				for n in root.findall('./cards/card'):
 					try:
 						(card_name, set_name, vendor_id) = (n.find('name').text, '', '')
-
 						ocr_slug = re.sub(r'[^a-zA-Z]+', '', card_name)
-
-						match = vendor_id_re.match(n.find('set').attrib['picURL'])
+						match = n.find('set').text
 						if match is not None:
-							vendor_id = match.group(1)
+							for Set in n.findall("set"):
+								if Set.attrib['muId'] != "0":
+									vendor_id = Set.attrib['muId']
+									if Set.text not in self.expansions:
+										self.expansions.append(Set.text)
+									break
+								else:
+									pass
+							# vendor_id = n.find('set').get('muId')
 
+							# if vendor_id == "0":
+							# 	vendor_id = n.find('set').get('muId')
+							# 	print("name: " + card_name + "id:" + vendor_id)
 						for sn in n.findall('./set'):
 							self.add(Card({
 								'slug':ocr_slug,
@@ -68,7 +80,14 @@ class CardDb(object):
 							}))
 
 					except Exception:
-						pass
+						print("an unknown exception has occured with parsing cards.xml")
+			whiteList = open(self.source_whitelist, "w")
+
+			for s in self.expansions:
+				whiteList.write(s + "\n")
+
+			whiteList.close()
+
 
 	def update_db(self, expansions, dictionary=False, card_db=False):
 		if dictionary or card_db:
@@ -138,6 +157,7 @@ class CardDb(object):
 	def get(self, slug):
 		# TODO: return self.card_db[slug]
 		data = self.card_db[slug]
+
 		return Card({
 			'slug':data[0],
 			'name':data[1],
