@@ -39,15 +39,15 @@ class Tesseract(object):
 		self.DEV_NULL = open(os.devnull, 'w')
 
 	def image_to_string(self, img):
-		with Timer('image_to_string_save', 2):
+		with Timer('image_to_string_save'):
 			cv.SaveImage('media/tmp.png', img)
-		with Timer('image_to_string_proc', 2):
+		with Timer('image_to_string_proc'):
 			subprocess.call(
 				['tesseract', 'media/tmp.png', 'media/tmp', '-l', 'eng', '-psm', '7', 'tesseract.config'],
 				stdout=self.DEV_NULL,
 				stderr=subprocess.STDOUT
 			)
-		with Timer('image_to_string_cat', 2):
+		with Timer('image_to_string_cat'):
 			txt = self.file_to_string('media/tmp.txt')
 		return txt
 
@@ -94,7 +94,7 @@ class Frame(object):
 	def __init__(self, img):
 		(self.max_w, self.max_h) = cv.GetSize(img)
 		# rectangle position TODO: use frame detection
-		(self.w, self.h) = (350, 30)
+		(self.w, self.h) = (600, 50)
 		(self.x, self.y) = (self.max_w/2 - self.w/2, 0)
 		self.rect = (self.x, self.y, self.w, self.h)
 		# TODO: replace with frame specific blocks from db
