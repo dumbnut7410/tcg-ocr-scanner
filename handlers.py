@@ -97,6 +97,7 @@ class OutputFileHandler(EventHandler):
 
 	def _write_deckbox_org_csv(self, card):
 		self.writer.writerow([1,0,card.name,'','','','','','Near Mint','English'])
+		self.out_file.flush()
 
 	def _del_deckbox_org_csv(self):
 		return 
