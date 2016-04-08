@@ -4,6 +4,7 @@ import os
 import sys
 import re
 import xml.etree.ElementTree as ET
+import json
 import sqlite3
 
 # basic card
@@ -19,7 +20,7 @@ class Card(object):
 class CardDb(object):
 	db_path = './db/database.sqlite'
 	db_schema = './db/schema.sql'
-	source_xml = './db/cards.xml'
+	source_xml = './db/AllSets.json'
 	source_whitelist = './db/expansion.whitelist'
 	target_dict_prefix = './db/tcg'
 	card_db = {}
@@ -48,43 +49,34 @@ class CardDb(object):
 				schema = schema_file.read()
 				connection.executescript(schema)
 
-			root = ET.parse(self.source_xml).getroot()
-			if root is not None:
-				vendor_id_re = re.compile(r'.*multiverseid=(\d+)&.*')
+			with open(self.source_xml) as thing:
+				root = json.load(thing)
 
-				for n in root.findall('./cards/card'):
-					try:
-						(card_name, set_name, vendor_id) = (n.find('name').text, '', '')
-						ocr_slug = re.sub(r'[^a-zA-Z]+', '', card_name)
-						match = n.find('set').text
-						if match is not None:
-							for Set in n.findall("set"):
-								if Set.attrib['muId'] != "0":
-									vendor_id = Set.attrib['muId']
-									if Set.text not in self.expansions:
-										self.expansions.append(Set.text)
-									break
-								else:
-									pass
-							# vendor_id = n.find('set').get('muId')
+				if root is not None:
+					vendor_id_re = re.compile(r'.*multiverseid=(\d+)&.*')
 
-							# if vendor_id == "0":
-							# 	vendor_id = n.find('set').get('muId')
-							# 	print("name: " + card_name + "id:" + vendor_id)
-						for sn in n.findall('./set'):
-							self.add(Card({
-								'slug':ocr_slug,
-								'name':card_name,
-								'expansion':sn.text,
-								'vendor_id':vendor_id
-							}))
+					for expansion in root.itervalues():
+						self.expansions.append(expansion["code"])
+						for card in expansion["cards"]:
+							try:
+								(card_name, set_name, vendor_id) = (card['name'], '', '')
+								ocr_slug = re.sub(r'[^a-zA-Z]+', '', card_name)
+								
+								self.add(Card({
+											'slug':ocr_slug,
+											'name':card_name,
+											'expansion':expansion['code'],
+											'vendor_id':vendor_id
+								}))
 
-					except Exception:
-						print("an unknown exception has occured with parsing cards.xml")
-			whiteList = open(self.source_whitelist, "w")
+							except Exception:
+								print("an unknown exception has occured with parsing cards.xml")
+
+			whiteList = open(self.source_whitelist, "wb")
 
 			for s in self.expansions:
-				whiteList.write(s + "\n")
+				print s
+				whiteList.write(s.replace(u'\u2014', '-').encode("ascii") + "\n")
 
 			whiteList.close()
 
